@@ -1,4 +1,6 @@
 import utils
+import time
+import random
 
 board_size = 20
 
@@ -16,27 +18,30 @@ class Node:
                         indicates whose move it is, with 1 for my turn and 0 for opponent's turn
         depth: int, depth of current node in the search tree
         maxDepth: int, value of the max depth for the search tree
-        rule: int, 0 or 1, 1 for MAX node and 0 for MIN node
         successor: list of Node representing children of the current node
         is_leaf: bool, whether the node is a leaf or not
         value: int,value of the node
     """
 
     def __init__(self, state, depth, maxDepth, successor=None, is_leaf=False, value=None):
-
         self.state = state
         self.depth = depth
         self.maxDepth = maxDepth
-        stones, playing = state
-        if playing == 1:
-            self.rule = 'max'
-        else:
-            self.rule = 'min'
         if successor is None:
             successor = []
         self.successor = successor
         self.is_leaf = is_leaf
         self.value = value
+
+    def __info__(self):
+        info = '========= Node Info ========'
+        depth = 'depth:' + str(self.depth)
+        maxDepth = 'maxDepth:' + str(self.maxDepth)
+        is_leaf = 'is_leaf:' + str(self.is_leaf)
+        value = 'value:' + str(self.value)
+        state = 'state:' + str(self.state)
+        successor = 'successors:' + str(len(self.successor))
+        return '\n'.join([info, depth, maxDepth, is_leaf, value, state, successor, '\n'])
 
 
 def max_value(node, alpha, beta):
@@ -64,7 +69,6 @@ def max_value(node, alpha, beta):
 
 def min_value(node, alpha, beta):
     """Get value for the given MIN node.
-
     Args:
         node: class Node object
         alpha: float
@@ -83,22 +87,6 @@ def min_value(node, alpha, beta):
             return val
         beta = min(beta, val)
     return val
-
-
-def get_value(node, alpha, beta):
-    """Get value for the given node.
-    Args:
-        node: class Node object
-        alpha: float
-        beta: float
-
-    Returns:
-        value of the node
-    """
-    if node.rule == 'max':
-        return max_value(node, alpha, beta)
-    else:
-        return min_value(node, alpha, beta)
 
 
 def get_next_stone(state):
@@ -135,8 +123,74 @@ def get_next_stone(state):
         next_stones.remove(stone)
     # delete invalid positions
     next_stones = {pos for pos in next_stones if
-                   pos[0] in range(1, board_size + 1) and pos[1] in range(1, board_size + 1)}
+                   pos[0] in range(board_size) and pos[1] in range(board_size)}
     return next_stones
+
+
+def get_sequence_score(sequence):
+    """Score the given sequence
+        Args:
+            sequence: tuple,
+        Returns:
+            value of score for the sequence.
+    """
+    for i in range(len(utils.stoneShapes)):
+
+        shape = utils.stoneShapes[i]
+        shape_name = utils.classDict[i]
+        if sequence in shape:
+            return utils.scoreDict[shape_name]
+    return 0
+
+
+def board_evaluation(state):
+    """Evaluate the current board at the leaf node.
+        Args:
+            state: tuple,(stones,playing)
+        Returns:
+            value of score for the current board.
+    """
+    stones, playing = state
+    # Step1. Restore the board
+    # 1 for occupied by self, -1 for occupied by opponent, 0 for empty position
+    # [[0 for i in range(m)] for j in range(n)]
+    board = [[0 for i in range(board_size)] for j in range(board_size)]
+    for i in range(board_size):
+        for j in range(board_size):
+            # if occupied by opponent
+            if (i, j) in stones[not playing]:
+                board[i][j] = -1
+            # if occupied by self
+            elif (i, j) in stones[playing]:
+                board[i][j] = 1
+    # Step2. Evaluate the board
+    # Detect whether the sequence falls into the following seven categories
+    # FiveInRow,LiveFour,DeadFour,LiveThree,DeadThree,LiveTwo,DeadTwo
+    boardEval = 0
+    for i in range(board_size):
+        for j in range(board_size):
+            # find suitable sequence in four directions
+            # vertical line
+            if j + 4 < board_size:
+                sequence = [board[i][k] for k in range(j, j + 5)]  # extract sequence by slice
+                boardEval += get_sequence_score(sequence)
+            # horizontal line
+            if i + 4 < board_size:
+                sequence = [board[k][j] for k in range(i, i + 5)]
+                boardEval += get_sequence_score(sequence)
+            # main diagonal line
+            if i + 4 < board_size and j + 4 < board_size:
+                sequence = []
+                for k in range(5):
+                    sequence.append(board[i + k][j + k])
+                boardEval += get_sequence_score(sequence)
+            # associate diagonal line
+            if i + 4 < board_size and j - 4 >= 0:
+                sequence = []
+                for k in range(5):
+                    sequence.append(board[i + k][j - k])
+                boardEval += get_sequence_score(sequence)
+    return boardEval
 
 
 def construct_tree(state, depth, maxDepth):
@@ -155,19 +209,54 @@ def construct_tree(state, depth, maxDepth):
     Returns:
         class Node object,root node of the search tree
     """
+    stones, playing = state
+    opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
+
+    tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
+
+    # if reach maxDepth
+    if depth == maxDepth:
+        tree_root.is_leaf = True  # end of recursive
+        tree_root.value = board_evaluation(state)  # evaluate the board
+        print(tree_root.__info__())
+        return tree_root
+
+    # Not reach maxDepth,then continue searching
+    positions = get_next_stone(state)
+    # try every possible next stone
+    for pos in positions:
+        my_stones = stones[playing].copy()  # deep copy of my stones
+        my_stones.add(pos)
+        if playing == 0:
+            # opponent's turn
+            # exchange my_stones and opp_stones
+            # because self is the opponent's opponent
+            new_stones = [my_stones, opp_stones]
+            next_playing = 1
+        else:
+            # my turn
+            new_stones = [opp_stones, my_stones]
+            next_playing = 0
+        new_state = (new_stones, next_playing)
+        # use depth-limited search
+        tree_root.successor.append(construct_tree(new_state, depth + 1, maxDepth))
+    return tree_root
 
 
 if __name__ == '__main__':
     # simple test on get_next_stone
-    board = [[0 for i in range(board_size + 1)] for j in range(board_size + 1)]
-    stones = [{(5, 5)}, {(6, 6)}]
-    for stone in stones:
-        for pos in stone:
-            board[pos[0]][pos[1]] = -1
+    board = [[0 for i in range(board_size)] for j in range(board_size)]
+    stones = [{(1, 1), (1, 2), (1, 3)}, {(5, 5), (6, 6), (7, 7)}]
     playing = 1
-    state = (stones, playing)
-    positions = get_next_stone(state)
-    for pos in positions:
+    opp_stones = stones[not playing]
+    my_stones = stones[playing]
+    for pos in opp_stones:
+        board[pos[0]][pos[1]] = -1
+    for pos in my_stones:
         board[pos[0]][pos[1]] = 1
     for line in board:
         print(line)
+    state = (stones, playing)
+    v = board_evaluation(state)
+    print(v)
+    tree_root = construct_tree(state, 0, 2)
