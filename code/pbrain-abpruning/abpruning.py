@@ -1,6 +1,8 @@
 import utils
 import time
+from utils import *
 import random
+import pisqpipe as pp
 
 board_size = 20
 
@@ -35,12 +37,12 @@ class Node:
 
     def __info__(self):
         info = '========= Node Info ========'
+        state = 'state:' + str(self.state)
         depth = 'depth:' + str(self.depth)
         maxDepth = 'maxDepth:' + str(self.maxDepth)
+        successor = 'successors:' + str(len(self.successor))
         is_leaf = 'is_leaf:' + str(self.is_leaf)
         value = 'value:' + str(self.value)
-        state = 'state:' + str(self.state)
-        successor = 'successors:' + str(len(self.successor))
         return '\n'.join([info, depth, maxDepth, is_leaf, value, state, successor, '\n'])
 
 
@@ -130,7 +132,7 @@ def get_next_stone(state):
 def get_sequence_score(sequence):
     """Score the given sequence
         Args:
-            sequence: tuple,
+            sequence: list,including five stones
         Returns:
             value of score for the sequence.
     """
@@ -153,7 +155,6 @@ def board_evaluation(state):
     stones, playing = state
     # Step1. Restore the board
     # 1 for occupied by self, -1 for occupied by opponent, 0 for empty position
-    # [[0 for i in range(m)] for j in range(n)]
     board = [[0 for i in range(board_size)] for j in range(board_size)]
     for i in range(board_size):
         for j in range(board_size):
@@ -243,6 +244,52 @@ def construct_tree(state, depth, maxDepth):
     return tree_root
 
 
+def strategy(state):
+    """Find an optimal action under the current state.
+        Args:
+            state: tuple,(stones,playing)
+            stones: list of sets,[opp_stones,my_stones]
+                       Each is a set contains positions of one player's stones.
+                       e.g. my_stones = {(1,1), (1,2), (1,3), (1,4)}
+                       serves to reconstruct the board
+            playing: 1 or 0
+                    indicates whose move it is, with 1 for my turn and 0 for opponent's turn
+        Returns:
+            best_action: tuple,optimal next action
+    """
+    maxDepth = 2
+    # first placed in the center of the board
+    if state is None:
+        return board_size / 2 + 1, board_size / 2 + 1
+    stones, playing = state
+    root = construct_tree(state, 0, maxDepth)
+    max_value = float("-inf")
+    best_actions = []
+    for successor in root.successor:
+        val = max_value(successor, float("-inf"), float("inf"))
+        new_stones, new_playing = successor.state
+        if val > max_value:
+            max_value = val
+            # find the movement and override best_actions
+            best_actions = list(new_stones[playing] - stones[playing])
+        elif val == max_value:
+            # find the movement and extend best_actions
+            best_actions.extend(list(new_stones[playing] - stones[playing]))
+    # if no best action, randomly pick one from the possible set
+    if best_actions == []:
+        best_action = random.choice(get_next_stone(state))
+    else:
+        best_action = random.choice(best_actions)
+    return best_action
+
+
+def abpruning_brain():
+    state = utils.get_board_state(utils.board)
+    action = strategy(state)
+    pp.do_my_move(action[0], action[1])
+
+
+"""
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(board_size)] for j in range(board_size)]
@@ -260,3 +307,4 @@ if __name__ == '__main__':
     v = board_evaluation(state)
     print(v)
     tree_root = construct_tree(state, 0, 2)
+"""
