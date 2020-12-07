@@ -11,12 +11,25 @@ DeadThree = [[2, 1, 1, 1, 0], [0, 1, 1, 1, 2], [2, 1, 1, 0, 1], [1, 0, 1, 1, 2],
 LiveTwo = [[0, 0, 1, 1, 0], [0, 1, 1, 0, 0], [0, 1, 0, 1, 0]]
 DeadTwo = [[2, 1, 1, 0, 0], [0, 0, 1, 1, 2], [0, 0, 2, 1, 1], [1, 1, 2, 0, 0], [0, 2, 1, 1, 0], [0, 1, 1, 2, 0],
            [2, 1, 0, 1, 0], [0, 1, 0, 1, 2], [0, 2, 1, 0, 1], [1, 0, 1, 2, 0]]
-
-stoneShapes = [FiveInRow, LiveFour, DeadFour, LiveThree, DeadThree, LiveTwo, DeadTwo]
+oFiveInRow = [2, 2, 2, 2, 2]
+oLiveFour = [[0, 2, 2, 2, 2], [2, 2, 2, 2, 0]]
+oDeadFour = [[1, 2, 2, 2, 2], [2, 2, 2, 2, 1], [2, 0, 2, 2, 2], [2, 2, 0, 2, 2], [2, 2, 2, 0, 2]]
+oLiveThree = [[0, 2, 2, 2, 0], [0, 2, 0, 2, 2], [2, 0, 2, 2, 0], [2, 2, 0, 2, 0], [0, 2, 2, 0, 2]]
+oDeadThree = [[1, 2, 2, 2, 0], [0, 2, 2, 2, 1], [1, 2, 2, 0, 2], [2, 0, 2, 2, 1], [2, 0, 0, 2, 2], [2, 2, 0, 0, 2]]
+oLiveTwo = [[0, 0, 2, 2, 0], [0, 2, 2, 0, 0], [0, 2, 0, 2, 0]]
+oDeadTwo = [[1, 2, 2, 0, 0], [0, 0, 2, 2, 1], [0, 0, 1, 2, 2], [2, 2, 1, 0, 0], [0, 1, 2, 2, 0], [0, 2, 2, 1, 0],
+            [1, 2, 0, 2, 0], [0, 2, 0, 2, 1], [0, 1, 2, 0, 2], [2, 0, 2, 1, 0]]
+stoneShapes = [FiveInRow, oFiveInRow, LiveFour, oLiveFour, DeadFour, oDeadFour, LiveThree, oLiveThree, DeadThree,
+               oDeadThree, LiveTwo, oLiveTwo, DeadTwo,
+               oDeadTwo]
 scoreDict = {'FiveInRow': 1e6, 'LiveFour': 1e5, 'DeadFour': 1e4, 'LiveThree': 1e3, 'DeadThree': 1e2, 'LiveTwo': 1e1,
-             'DeadTwo': 1}
-classDict = {0: 'FiveInRow', 1: 'LiveFour', 2: 'DeadFour', 3: 'LiveThree', 4: 'DeadThree', 5: 'LiveTwo',
-             6: 'DeadTwo'}
+             'DeadTwo': 1, 'oFiveInRow': -1e6, 'oLiveFour': -1e5, 'oDeadFour': -1e4, 'oLiveThree': -1e3,
+             'oDeadThree': -1e2, 'oLiveTwo': -1e1,
+             'oDeadTwo': -1}
+classDict = {0: 'FiveInRow', 2: 'LiveFour', 4: 'DeadFour', 6: 'LiveThree', 8: 'DeadThree', 10:'LiveTwo',
+             12: 'DeadTwo', 1: 'oFiveInRow', 3: 'oLiveFour', 5: 'oDeadFour', 7: 'oLiveThree', 9: 'oDeadThree',
+             11: 'oLiveTwo',
+             13: 'oDeadTwo'}
 
 
 def get_all_around(pos):
