@@ -3,6 +3,7 @@ MAX_BOARD = 20
 board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
 
 # scores for certain patterns
+"""
 FiveInRow = [1, 1, 1, 1, 1]
 LiveFour = [[0, 1, 1, 1, 1], [1, 1, 1, 1, 0]]
 DeadFour = [[2, 1, 1, 1, 1], [1, 1, 1, 1, 2], [1, 0, 1, 1, 1], [1, 1, 0, 1, 1], [1, 1, 1, 0, 1]]
@@ -26,10 +27,14 @@ scoreDict = {'FiveInRow': 1e6, 'LiveFour': 1e5, 'DeadFour': 1e4, 'LiveThree': 1e
              'DeadTwo': 1, 'oFiveInRow': -1e6, 'oLiveFour': -1e5, 'oDeadFour': -1e4, 'oLiveThree': -1e3,
              'oDeadThree': -1e2, 'oLiveTwo': -1e1,
              'oDeadTwo': -1}
-classDict = {0: 'FiveInRow', 2: 'LiveFour', 4: 'DeadFour', 6: 'LiveThree', 8: 'DeadThree', 10:'LiveTwo',
+classDict = {0: 'FiveInRow', 2: 'LiveFour', 4: 'DeadFour', 6: 'LiveThree', 8: 'DeadThree', 10: 'LiveTwo',
              12: 'DeadTwo', 1: 'oFiveInRow', 3: 'oLiveFour', 5: 'oDeadFour', 7: 'oLiveThree', 9: 'oDeadThree',
              11: 'oLiveTwo',
              13: 'oDeadTwo'}
+             
+"""
+# mapping sequence score to sum
+sumDict = {0: 10, -1: -1e2, -2: -1e3, -3: -3e4, -4: -3e5, -5: -3e6, 1: 1e2, 2: 1e3, 3: 1e4, 4: 1e5, 5: 1e6}
 
 
 def get_all_around(pos):

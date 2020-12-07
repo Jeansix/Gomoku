@@ -134,32 +134,10 @@ def get_sequence_score(sequence):
     """
     if 2 in sequence and 1 in sequence:
         return 0
+    # extract sum as feature
     seqTmp = [-1 if x == 2 else x for x in sequence]
     seqSum = sum(seqTmp)
-    if seqSum == 0:
-        return 10
-    elif seqSum == -1:
-        return -1e2
-    elif seqSum == -2:
-        return -1e3
-    elif seqSum == -3:
-        return -3e4
-    elif seqSum == -4:
-        return -3e5
-    elif seqSum == -5:
-        return -3e6
-    elif seqSum == 1:
-        return 1e2
-    elif seqSum == 2:
-        return 1e3
-    elif seqSum == 3:
-        return 1e4
-    elif seqSum == 4:
-        return 1e5
-    elif seqSum == 5:
-        return 1e6
-    else:
-        return 0
+    return sumDict[seqSum]
 
 
 def board_evaluation(state):
@@ -297,7 +275,8 @@ def strategy(state):
         best_action = random.choice(best_actions)
     return best_action
 
-"""
+
+
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
@@ -319,4 +298,4 @@ if __name__ == '__main__':
     seq = [1, 0, 1, 1, 1]
     seqTmp = [-1 if x == 2 else x for x in seq]
     print(seqTmp)
-"""
+
