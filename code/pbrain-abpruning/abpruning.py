@@ -257,7 +257,7 @@ def strategy(state):
     maxDepth = 2
     # first placed in the center of the board
     if state is None:
-        return (10,10)
+        return (MAX_BOARD // 2, MAX_BOARD // 2)
     stones, playing = state
     root = construct_tree(state, 0, maxDepth)
     maxVal = float("-inf")
@@ -278,6 +278,7 @@ def strategy(state):
     else:
         best_action = random.choice(best_actions)
     return best_action
+
 
 """
 if __name__ == '__main__':
