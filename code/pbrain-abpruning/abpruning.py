@@ -276,7 +276,7 @@ def strategy(state):
     return best_action
 
 
-
+"""
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
@@ -298,4 +298,4 @@ if __name__ == '__main__':
     seq = [1, 0, 1, 1, 1]
     seqTmp = [-1 if x == 2 else x for x in seq]
     print(seqTmp)
-
+"""
