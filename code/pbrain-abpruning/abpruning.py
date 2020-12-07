@@ -1,10 +1,9 @@
-import utils
 import time
 from utils import *
 import random
-import pisqpipe as pp
 
-board_size = 20
+
+# import pisqpipe as pp
 
 
 class Node:
@@ -113,9 +112,9 @@ def get_next_stone(state):
     next_stones = []
     # use sliding window to extract next possible stones
     for stone in my_stones:
-        next_stones.extend(utils.get_all_around(stone))
+        next_stones.extend(get_all_around(stone))
     for stone in opp_stones:
-        next_stones.extend(utils.get_all_around(stone))
+        next_stones.extend(get_all_around(stone))
     # drop duplicate positions
     next_stones = set(next_stones)
     # remove occupied positions
@@ -125,7 +124,7 @@ def get_next_stone(state):
         next_stones.remove(stone)
     # delete invalid positions
     next_stones = {pos for pos in next_stones if
-                   pos[0] in range(board_size) and pos[1] in range(board_size)}
+                   pos[0] in range(MAX_BOARD) and pos[1] in range(MAX_BOARD)}
     return next_stones
 
 
@@ -136,12 +135,12 @@ def get_sequence_score(sequence):
         Returns:
             value of score for the sequence.
     """
-    for i in range(len(utils.stoneShapes)):
+    for i in range(len(stoneShapes)):
 
-        shape = utils.stoneShapes[i]
-        shape_name = utils.classDict[i]
+        shape = stoneShapes[i]
+        shape_name = classDict[i]
         if sequence in shape:
-            return utils.scoreDict[shape_name]
+            return scoreDict[shape_name]
     return 0
 
 
@@ -154,13 +153,13 @@ def board_evaluation(state):
     """
     stones, playing = state
     # Step1. Restore the board
-    # 1 for occupied by self, -1 for occupied by opponent, 0 for empty position
-    board = [[0 for i in range(board_size)] for j in range(board_size)]
-    for i in range(board_size):
-        for j in range(board_size):
+    # 1 for occupied by self, 2 for occupied by opponent, 0 for empty position
+    board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
+    for i in range(MAX_BOARD):
+        for j in range(MAX_BOARD):
             # if occupied by opponent
             if (i, j) in stones[not playing]:
-                board[i][j] = -1
+                board[i][j] = 2
             # if occupied by self
             elif (i, j) in stones[playing]:
                 board[i][j] = 1
@@ -168,25 +167,25 @@ def board_evaluation(state):
     # Detect whether the sequence falls into the following seven categories
     # FiveInRow,LiveFour,DeadFour,LiveThree,DeadThree,LiveTwo,DeadTwo
     boardEval = 0
-    for i in range(board_size):
-        for j in range(board_size):
+    for i in range(MAX_BOARD):
+        for j in range(MAX_BOARD):
             # find suitable sequence in four directions
             # vertical line
-            if j + 4 < board_size:
+            if j + 4 < MAX_BOARD:
                 sequence = [board[i][k] for k in range(j, j + 5)]  # extract sequence by slice
                 boardEval += get_sequence_score(sequence)
             # horizontal line
-            if i + 4 < board_size:
+            if i + 4 < MAX_BOARD:
                 sequence = [board[k][j] for k in range(i, i + 5)]
                 boardEval += get_sequence_score(sequence)
             # main diagonal line
-            if i + 4 < board_size and j + 4 < board_size:
+            if i + 4 < MAX_BOARD and j + 4 < MAX_BOARD:
                 sequence = []
                 for k in range(5):
                     sequence.append(board[i + k][j + k])
                 boardEval += get_sequence_score(sequence)
             # associate diagonal line
-            if i + 4 < board_size and j - 4 >= 0:
+            if i + 4 < MAX_BOARD and j - 4 >= 0:
                 sequence = []
                 for k in range(5):
                     sequence.append(board[i + k][j - k])
@@ -214,12 +213,10 @@ def construct_tree(state, depth, maxDepth):
     opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
 
     tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
-
     # if reach maxDepth
     if depth == maxDepth:
         tree_root.is_leaf = True  # end of recursive
         tree_root.value = board_evaluation(state)  # evaluate the board
-        print(tree_root.__info__())
         return tree_root
 
     # Not reach maxDepth,then continue searching
@@ -260,19 +257,19 @@ def strategy(state):
     maxDepth = 2
     # first placed in the center of the board
     if state is None:
-        return board_size / 2 + 1, board_size / 2 + 1
+        return (10,10)
     stones, playing = state
     root = construct_tree(state, 0, maxDepth)
-    max_value = float("-inf")
+    maxVal = float("-inf")
     best_actions = []
     for successor in root.successor:
         val = max_value(successor, float("-inf"), float("inf"))
         new_stones, new_playing = successor.state
-        if val > max_value:
-            max_value = val
+        if val > maxVal:
+            maxVal = val
             # find the movement and override best_actions
             best_actions = list(new_stones[playing] - stones[playing])
-        elif val == max_value:
+        elif val == maxVal:
             # find the movement and extend best_actions
             best_actions.extend(list(new_stones[playing] - stones[playing]))
     # if no best action, randomly pick one from the possible set
@@ -282,23 +279,16 @@ def strategy(state):
         best_action = random.choice(best_actions)
     return best_action
 
-
-def abpruning_brain():
-    state = utils.get_board_state(utils.board)
-    action = strategy(state)
-    pp.do_my_move(action[0], action[1])
-
-
 """
 if __name__ == '__main__':
     # simple test on get_next_stone
-    board = [[0 for i in range(board_size)] for j in range(board_size)]
+    board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
     stones = [{(1, 1), (1, 2), (1, 3)}, {(5, 5), (6, 6), (7, 7)}]
     playing = 1
     opp_stones = stones[not playing]
     my_stones = stones[playing]
     for pos in opp_stones:
-        board[pos[0]][pos[1]] = -1
+        board[pos[0]][pos[1]] = 2
     for pos in my_stones:
         board[pos[0]][pos[1]] = 1
     for line in board:
@@ -306,5 +296,7 @@ if __name__ == '__main__':
     state = (stones, playing)
     v = board_evaluation(state)
     print(v)
-    tree_root = construct_tree(state, 0, 2)
+    state=None
+    action = strategy(state)
+    print(action)
 """
