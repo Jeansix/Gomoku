@@ -1,6 +1,7 @@
 import time
 from utils import *
 import random
+from operator import attrgetter, itemgetter
 
 
 class Node:
@@ -96,7 +97,7 @@ def get_next_stone(state):
                        Each is a set contains positions of one player's stones.
                        e.g. my_stones = {(1,1), (1,2), (1,3), (1,4)}
                        serves to reconstruct the board
-                playing: 1 or 0
+            playing: 1 or 0
                         indicates whose move it is, with 1 for my turn and 0 for opponent's turn
 
     Returns:
@@ -107,7 +108,7 @@ def get_next_stone(state):
     my_stones = stones[playing]
     opp_stones = stones[not playing]
     next_stones = []
-    # use sliding window to extract next possible stones
+    # use 8-neighbourhood to extract next possible stones
     for stone in my_stones:
         next_stones.extend(get_all_around(stone))
     for stone in opp_stones:
@@ -207,16 +208,10 @@ def construct_tree(state, depth, maxDepth):
     """
     stones, playing = state
     opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
-
     tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
-    # if reach maxDepth
-    if depth == maxDepth:
-        tree_root.is_leaf = True  # end of recursive
-        tree_root.value = board_evaluation(state)  # evaluate the board
-        return tree_root
-
-    # Not reach maxDepth,then continue searching
     positions = get_next_stone(state)
+    values = []
+    value2state = dict()
     # try every possible next stone
     for pos in positions:
         my_stones = stones[playing].copy()  # deep copy of my stones
@@ -232,8 +227,24 @@ def construct_tree(state, depth, maxDepth):
             new_stones = [opp_stones, my_stones]
             next_playing = 0
         new_state = (new_stones, next_playing)
-        # use depth-limited search
-        tree_root.successor.append(construct_tree(new_state, depth + 1, maxDepth))
+        if depth != maxDepth - 1:
+            tree_root.successor.append(construct_tree(new_state, depth + 1, maxDepth))
+        else:
+            tmp_value = board_evaluation(new_state)
+            values.append(tmp_value)
+            value2state[tmp_value] = new_state
+    if depth == maxDepth - 1:
+        values.sort(reverse=True)
+        for val in values[:]:  # deep copy
+            tree_root.successor.append(
+                Node(value2state[val], depth + 1, maxDepth, successor=None, is_leaf=True, value=val))
+        # if len(tree_root.successor) > 1:
+        # print(len(tree_root.successor))
+        # sortedList = tree_root.successor.copy()
+        # sorted(sortedList, key=itemgetter(5), reverse=True)
+    # print(sortedList)
+    # sorted(sortedList, key=lambda x: x.value)
+    # tree_root.successor = sortedList
     return tree_root
 
 
@@ -255,9 +266,11 @@ def strategy(state):
     if state is None:
         return (MAX_BOARD // 2, MAX_BOARD // 2)
     stones, playing = state
+    # Step1. Construct a search tree of maxDepth
     root = construct_tree(state, 0, maxDepth)
     maxVal = float("-inf")
     best_actions = []
+    # Step2. Apply abpruning to find the best state path
     for successor in root.successor:
         val = max_value(successor, float("-inf"), float("inf"))
         new_stones, new_playing = successor.state
@@ -288,14 +301,20 @@ if __name__ == '__main__':
         board[pos[0]][pos[1]] = 2
     for pos in my_stones:
         board[pos[0]][pos[1]] = 1
-    for line in board:
-        print(line)
+
+    # for line in board:
+    # print(line)
     state = (stones, playing)
-    v = board_evaluation(state)
-    print(v)
-    action = strategy(state)
-    print(action)
-    seq = [1, 0, 1, 1, 1]
-    seqTmp = [-1 if x == 2 else x for x in seq]
-    print(seqTmp)
+    root = construct_tree(state, 0, 2)
+    print(strategy(state))
+
+    # bfs traverse
+    q = [root]
+    while len(q) > 0:
+        top = q[0]
+        q = q[1:]
+        if top.value:
+            print(top.__info__())
+        for successor in top.successor:
+            q.append(successor)
 """
