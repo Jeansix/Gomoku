@@ -128,6 +128,69 @@ def get_next_stone(state):
     return next_stones
 
 
+def extract_feature(board, stones, classDict):
+    cnt = Counter()
+    for pos in stones:
+        lines = get_str_lines(board, pos)
+        for line in lines:
+            flag = 0
+            for key in classDict.keys():
+                if key in line:
+                    cnt[classDict[key]] += 1
+                    flag = 1
+                    break
+            if flag == 0:
+                cnt['nothreat'] += 1
+    return cnt
+
+
+def interested_move(board, stones, playing):
+    myFours = []
+    oppFours = []
+    mybFours = []
+    oppbFours = []
+    oppThrees = []
+    myThrees = []
+    for pos in stones:
+        myCnt = extract_feature(board, [pos], myclassDict)
+        oppCnt = extract_feature(board, [pos], oppclassDict)
+        if playing == 0:
+            myCnt, oppCnt = oppCnt, myCnt
+        if myCnt['alive4'] > 0:
+            myFours.append(pos)  # win
+        if oppCnt['alive4'] > 0:
+            oppFours.append(pos)
+        if myCnt['lian-rush4'] > 0:
+            mybFours.append(pos)
+        if myCnt['tiao-rush4'] > 0:
+            mybFours.append(pos)
+        if oppCnt['lian-rush4'] > 0:
+            oppbFours.append(pos)
+        if oppCnt['tiao-rush4'] > 0:
+            oppbFours.append(pos)
+        if oppCnt['lian-alive3'] > 0:
+            oppThrees.append(pos)
+        if oppCnt['tiao-alive3'] > 0:
+            oppThrees.append(pos)
+        if myCnt['lian-alive3'] > 0:
+            myThrees.append(pos)
+        if myCnt['tiao-alive3'] > 0:
+            myThrees.append(pos)
+    if myFours:
+        return myFours
+    if mybFours:
+        return mybFours
+    if oppFours :
+        return oppFours
+    if oppbFours:
+        return oppbFours
+    if myThrees:
+        return myThrees
+    if oppThrees:
+        return oppThrees
+    return list(stones)
+
+
 """
 # sum version of board_evaluation
 def board_evaluation(state):
@@ -183,19 +246,7 @@ def board_evaluation(state):
 
 def my_evaluate(my_stones, board):
     myScore = 0
-    myCounter = Counter()
-    for pos in my_stones:
-        lines = get_str_lines(board, pos)
-        for line in lines:
-            flag = 0
-            for key in myclassDict.keys():
-                if key in line:
-                    myCounter[myclassDict[key]] += 1
-                    flag = 1
-                    break
-            if flag == 0:
-                myCounter['nothreat'] += 1
-    # my score
+    myCounter = extract_feature(board, my_stones, myclassDict)
     for pt in myCounter.keys():
         myScore += myscoreDict[pt] * myCounter[pt]
     return myScore
@@ -203,19 +254,7 @@ def my_evaluate(my_stones, board):
 
 def opp_evaluate(opp_stones, board):
     oppScore = 0
-    oppCounter = Counter()
-    for pos in opp_stones:
-        lines = get_str_lines(board, pos)
-        for line in lines:
-            flag = 0
-            for key in oppclassDict.keys():
-                if key in line:
-                    oppCounter[oppclassDict[key]] += 1
-                    flag = 1
-                    break
-            if flag == 0:
-                oppCounter['nothreat'] += 1
-    # opp score
+    oppCounter = extract_feature(board, opp_stones, oppclassDict)
     for pt in oppCounter.keys():
         oppScore += oppscoreDict[pt] * oppCounter[pt]
     return oppScore
@@ -266,7 +305,8 @@ def construct_tree(state, depth, maxDepth):
     stones, playing = state
     opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
     tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
-    positions = get_next_stone(state)
+    all_positions = get_next_stone(state)
+    positions = interested_move(board, all_positions,playing)
     values = []
     value2state = dict()
     # try every possible next stone
@@ -354,7 +394,7 @@ def strategy(state):
         best_action = random.choice(best_actions)
     return best_action
 
-
+"""
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
@@ -379,3 +419,4 @@ if __name__ == '__main__':
         q = q[1:]
         for successor in top.successor:
             q.append(successor)
+"""
