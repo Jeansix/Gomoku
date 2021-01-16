@@ -128,22 +128,51 @@ def get_next_stone(state):
     return next_stones
 
 
-def extract_feature(board, stones, classDict):
-    cnt = Counter()
-    for pos in stones:
-        lines = get_str_lines(board, pos)
-        for line in lines:
-            flag = 0
-            for key in classDict.keys():
-                if key in line:
-                    cnt[classDict[key]] += 1
-                    flag = 1
-                    break
-            if flag == 0:
-                cnt['nothreat'] += 1
-    return cnt
+def extract_feature(board, myclassDict, oppclassDict):
+    mycnt = Counter()
+    oppcnt = Counter()
+    # scan by row
+    for row in board:
+        line = "".join(map(str, row))
+        for key in myclassDict.keys():
+            mycnt[myclassDict[key]] += len(re.findall(key, line))
+        for key in oppclassDict.keys():
+            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
+    # scan by col
+    for j in range(MAX_BOARD):
+        col = [a[j] for a in board]
+        line = "".join(map(str, col))
+        for key in myclassDict.keys():
+            mycnt[myclassDict[key]] += len(re.findall(key, line))
+        for key in oppclassDict.keys():
+            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
+
+    # scan by diag
+    for dist in range(-MAX_BOARD + 1, MAX_BOARD):
+        row_ini, col_ini = (0, -dist) if dist < 0 else (dist, 0)
+        diag = [board[i][j] for i in range(
+            row_ini, MAX_BOARD) for j in range(col_ini, MAX_BOARD) if i - j == dist]
+        line = "".join(map(str, diag))
+        for key in myclassDict.keys():
+            mycnt[myclassDict[key]] += len(re.findall(key, line))
+        for key in oppclassDict.keys():
+            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
+
+    # scan by associate diag
+    for dist in range(0, MAX_BOARD + MAX_BOARD - 1):
+        row_ini, col_ini = (dist, 0) if dist < MAX_BOARD else (
+            MAX_BOARD - 1, dist - MAX_BOARD + 1)
+        diag = [board[i][j] for i in range(
+            row_ini, -1, -1) for j in range(col_ini, MAX_BOARD) if i + j == dist]
+        line = "".join(map(str, diag))
+        for key in myclassDict.keys():
+            mycnt[myclassDict[key]] += len(re.findall(key, line))
+        for key in oppclassDict.keys():
+            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
+    return mycnt, oppcnt
 
 
+"""
 def interested_move(board, stones, playing):
     myFours = []
     oppFours = []
@@ -189,7 +218,7 @@ def interested_move(board, stones, playing):
     if oppThrees:
         return oppThrees
     return list(stones)
-
+"""
 
 """
 # sum version of board_evaluation
@@ -243,23 +272,6 @@ def board_evaluation(state):
 
 """
 
-
-def my_evaluate(my_stones, board):
-    myScore = 0
-    myCounter = extract_feature(board, my_stones, myclassDict)
-    for pt in myCounter.keys():
-        myScore += myscoreDict[pt] * myCounter[pt]
-    return myScore
-
-
-def opp_evaluate(opp_stones, board):
-    oppScore = 0
-    oppCounter = extract_feature(board, opp_stones, oppclassDict)
-    for pt in oppCounter.keys():
-        oppScore += oppscoreDict[pt] * oppCounter[pt]
-    return oppScore
-
-
 def board_evaluation(state):
     """Evaluate the current board at the leaf node.
         Args:
@@ -283,7 +295,13 @@ def board_evaluation(state):
                 board[i][j] = 1
     # Step2. Evaluate the board
     # Detect whether the sequence falls into the keys of classDicts
-    return my_evaluate(my_stones, board) - opp_evaluate(opp_stones, board)
+    score = 0
+    mycnt, oppcnt = extract_feature(board, myclassDict, oppclassDict)
+    for pt in mycnt.keys():
+        score += myscoreDict[pt] * mycnt[pt]
+    for pt in oppcnt.keys():
+        score -= oppscoreDict[pt] * oppcnt[pt]
+    return score
 
 
 def construct_tree(state, depth, maxDepth):
@@ -305,8 +323,7 @@ def construct_tree(state, depth, maxDepth):
     stones, playing = state
     opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
     tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
-    all_positions = get_next_stone(state)
-    positions = interested_move(board, all_positions,playing)
+    positions = get_next_stone(state)
     values = []
     value2state = dict()
     # try every possible next stone
@@ -394,7 +411,7 @@ def strategy(state):
         best_action = random.choice(best_actions)
     return best_action
 
-"""
+
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
@@ -419,4 +436,4 @@ if __name__ == '__main__':
         q = q[1:]
         for successor in top.successor:
             q.append(successor)
-"""
+
