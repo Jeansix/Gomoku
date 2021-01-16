@@ -2,6 +2,8 @@ import time
 from utils import *
 import random
 from operator import attrgetter, itemgetter
+from collections import Counter
+import re
 
 
 class Node:
@@ -126,28 +128,15 @@ def get_next_stone(state):
     return next_stones
 
 
-def get_sequence_score(sequence):
-    """Score the given sequence
-        Args:
-            sequence: list,including five stones
-        Returns:
-            value of score for the sequence.
-    """
-    if 2 in sequence and 1 in sequence:
-        return 0
-    # extract sum as feature
-    seqTmp = [-1 if x == 2 else x for x in sequence]
-    seqSum = sum(seqTmp)
-    return sumDict[seqSum]
-
-
+"""
+# sum version of board_evaluation
 def board_evaluation(state):
-    """Evaluate the current board at the leaf node.
+
+    Evaluate the current board at the leaf node.
         Args:
             state: tuple,(stones,playing)
         Returns:
-            value of score for the current board.
-    """
+
     stones, playing = state
     # Step1. Restore the board
     # 1 for occupied by self, 2 for occupied by opponent, 0 for empty position
@@ -188,6 +177,74 @@ def board_evaluation(state):
                     sequence.append(board[i + k][j - k])
                 boardEval += get_sequence_score(sequence)
     return boardEval
+
+"""
+
+
+def my_evaluate(my_stones, board):
+    myScore = 0
+    myCounter = Counter()
+    for pos in my_stones:
+        lines = get_str_lines(board, pos)
+        for line in lines:
+            flag = 0
+            for key in myclassDict.keys():
+                if key in line:
+                    myCounter[myclassDict[key]] += 1
+                    flag = 1
+                    break
+            if flag == 0:
+                myCounter['nothreat'] += 1
+    # my score
+    for pt in myCounter.keys():
+        myScore += myscoreDict[pt] * myCounter[pt]
+    return myScore
+
+
+def opp_evaluate(opp_stones, board):
+    oppScore = 0
+    oppCounter = Counter()
+    for pos in opp_stones:
+        lines = get_str_lines(board, pos)
+        for line in lines:
+            flag = 0
+            for key in oppclassDict.keys():
+                if key in line:
+                    oppCounter[oppclassDict[key]] += 1
+                    flag = 1
+                    break
+            if flag == 0:
+                oppCounter['nothreat'] += 1
+    # opp score
+    for pt in oppCounter.keys():
+        oppScore += oppscoreDict[pt] * oppCounter[pt]
+    return oppScore
+
+
+def board_evaluation(state):
+    """Evaluate the current board at the leaf node.
+        Args:
+            state: tuple,(stones,playing)
+        Returns:
+            value of score for the current board.
+    """
+    stones, playing = state
+    opp_stones = stones[not playing]
+    my_stones = stones[playing]
+    # Step1. Restore the board
+    # 1 for occupied by self, 2 for occupied by opponent, 0 for empty position
+    board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
+    for i in range(MAX_BOARD):
+        for j in range(MAX_BOARD):
+            # if occupied by opponent
+            if (i, j) in stones[not playing]:
+                board[i][j] = 2
+            # if occupied by self
+            elif (i, j) in stones[playing]:
+                board[i][j] = 1
+    # Step2. Evaluate the board
+    # Detect whether the sequence falls into the keys of classDicts
+    return my_evaluate(my_stones, board) - opp_evaluate(opp_stones, board)
 
 
 def construct_tree(state, depth, maxDepth):
@@ -232,12 +289,21 @@ def construct_tree(state, depth, maxDepth):
         else:
             tmp_value = board_evaluation(new_state)
             values.append(tmp_value)
-            value2state[tmp_value] = new_state
+            if tmp_value in value2state.keys():
+                value2state[tmp_value].append(new_state)
+            else:
+                value2state[tmp_value] = [new_state]
     if depth == maxDepth - 1:
+        values = list(set(values))
         values.sort(reverse=True)
-        for val in values[:]:  # deep copy
-            tree_root.successor.append(
-                Node(value2state[val], depth + 1, maxDepth, successor=None, is_leaf=True, value=val))
+        for val in values:  # deep copy
+            for st in value2state[val]:
+                tree_root.successor.append(
+                    Node(st, depth + 1, maxDepth, successor=None, is_leaf=True, value=val))
+                if len(tree_root.successor) > 7:
+                    break
+            if len(tree_root.successor) > 7:
+                break
         # if len(tree_root.successor) > 1:
         # print(len(tree_root.successor))
         # sortedList = tree_root.successor.copy()
@@ -289,11 +355,10 @@ def strategy(state):
     return best_action
 
 
-"""
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
-    stones = [{(1, 1), (1, 2), (1, 3)}, {(5, 5), (6, 6)}]
+    stones = [{(9, 10), (9, 9), (9, 11), (9, 7)}, {(10, 10), (11, 12), (10, 8), (9, 12)}]
     playing = 1
     opp_stones = stones[not playing]
     my_stones = stones[playing]
@@ -302,19 +367,15 @@ if __name__ == '__main__':
     for pos in my_stones:
         board[pos[0]][pos[1]] = 1
 
-    # for line in board:
-    # print(line)
+    for line in board:
+        print(line)
     state = (stones, playing)
     root = construct_tree(state, 0, 2)
     print(strategy(state))
-
     # bfs traverse
     q = [root]
     while len(q) > 0:
         top = q[0]
         q = q[1:]
-        if top.value:
-            print(top.__info__())
         for successor in top.successor:
             q.append(successor)
-"""
