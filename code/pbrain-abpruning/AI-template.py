@@ -6,7 +6,7 @@ from abpruning import strategy
 
 
 # interface part
-pp.infotext = 'name="pbrain-abpruning", author="Jeansix", version="2.1",country="China"'
+pp.infotext = 'name="pbrain-abpruning", author="Jeansix", version="2.2",country="China"'
 
 
 def brain_init():

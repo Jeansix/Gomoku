@@ -1,14 +1,12 @@
 import time
 from utils import *
 import random
-from operator import attrgetter, itemgetter
 from collections import Counter
 import re
 
 
 class Node:
     """Node of the tree.
-
     Attributes:
         state: tuple,(stones,playing)
                stones: list of sets,[opp_stones,my_stones]
@@ -47,15 +45,12 @@ class Node:
 
 def max_value(node, alpha, beta):
     """Get value for the given MAX node.
-
     Args:
         node: class Node object
         alpha: float
         beta: float
-
     Returns:
         value of the node
-
     """
     if node.is_leaf:
         return node.value
@@ -74,10 +69,8 @@ def min_value(node, alpha, beta):
         node: class Node object
         alpha: float
         beta: float
-
     Returns:
         value of the node
-
     """
     if node.is_leaf:
         return node.value
@@ -92,7 +85,6 @@ def min_value(node, alpha, beta):
 
 def get_next_stone(state):
     """Get next stone according to the current state .
-
     Args:
         state: tuple,(stones,playing)
                stones: list of sets,[opp_stones,my_stones]
@@ -101,10 +93,8 @@ def get_next_stone(state):
                        serves to reconstruct the board
             playing: 1 or 0
                         indicates whose move it is, with 1 for my turn and 0 for opponent's turn
-
     Returns:
         list of possible next stone
-
     """
     stones, playing = state
     my_stones = stones[playing]
@@ -128,63 +118,30 @@ def get_next_stone(state):
     return next_stones
 
 
-def extract_feature(board, myclassDict, oppclassDict):
-    mycnt = Counter()
-    oppcnt = Counter()
-    # scan by row
-    for row in board:
-        line = "".join(map(str, row))
-        for key in myclassDict.keys():
-            mycnt[myclassDict[key]] += len(re.findall(key, line))
-        for key in oppclassDict.keys():
-            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
-    # scan by col
-    for j in range(MAX_BOARD):
-        col = [a[j] for a in board]
-        line = "".join(map(str, col))
-        for key in myclassDict.keys():
-            mycnt[myclassDict[key]] += len(re.findall(key, line))
-        for key in oppclassDict.keys():
-            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
-
-    # scan by diag
-    for dist in range(-MAX_BOARD + 1, MAX_BOARD):
-        row_ini, col_ini = (0, -dist) if dist < 0 else (dist, 0)
-        diag = [board[i][j] for i in range(
-            row_ini, MAX_BOARD) for j in range(col_ini, MAX_BOARD) if i - j == dist]
-        line = "".join(map(str, diag))
-        for key in myclassDict.keys():
-            mycnt[myclassDict[key]] += len(re.findall(key, line))
-        for key in oppclassDict.keys():
-            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
-
-    # scan by associate diag
-    for dist in range(0, MAX_BOARD + MAX_BOARD - 1):
-        row_ini, col_ini = (dist, 0) if dist < MAX_BOARD else (
-            MAX_BOARD - 1, dist - MAX_BOARD + 1)
-        diag = [board[i][j] for i in range(
-            row_ini, -1, -1) for j in range(col_ini, MAX_BOARD) if i + j == dist]
-        line = "".join(map(str, diag))
-        for key in myclassDict.keys():
-            mycnt[myclassDict[key]] += len(re.findall(key, line))
-        for key in oppclassDict.keys():
-            oppcnt[oppclassDict[key]] += len(re.findall(key, line))
-    return mycnt, oppcnt
+def extract_feature(board, stones, classDict):
+    cnt = Counter()
+    for pos in stones:
+        lines = get_str_lines(board, pos)
+        for line in lines:
+            flag = 0
+            for key in classDict.keys():
+                if key in line:
+                    cnt[classDict[key]] += 1
+                    flag = 1
+                    break
+            if flag == 0:
+                cnt['nothreat'] += 1
+    return cnt
 
 
-"""
-def interested_move(board, stones, playing):
+def interested_move(board, stones):
     myFours = []
     oppFours = []
     mybFours = []
     oppbFours = []
-    oppThrees = []
-    myThrees = []
     for pos in stones:
         myCnt = extract_feature(board, [pos], myclassDict)
         oppCnt = extract_feature(board, [pos], oppclassDict)
-        if playing == 0:
-            myCnt, oppCnt = oppCnt, myCnt
         if myCnt['alive4'] > 0:
             myFours.append(pos)  # win
         if oppCnt['alive4'] > 0:
@@ -197,38 +154,25 @@ def interested_move(board, stones, playing):
             oppbFours.append(pos)
         if oppCnt['tiao-rush4'] > 0:
             oppbFours.append(pos)
-        if oppCnt['lian-alive3'] > 0:
-            oppThrees.append(pos)
-        if oppCnt['tiao-alive3'] > 0:
-            oppThrees.append(pos)
-        if myCnt['lian-alive3'] > 0:
-            myThrees.append(pos)
-        if myCnt['tiao-alive3'] > 0:
-            myThrees.append(pos)
+
     if myFours:
         return myFours
     if mybFours:
         return mybFours
-    if oppFours :
+    if oppFours:
         return oppFours
     if oppbFours:
         return oppbFours
-    if myThrees:
-        return myThrees
-    if oppThrees:
-        return oppThrees
     return list(stones)
-"""
+
 
 """
 # sum version of board_evaluation
 def board_evaluation(state):
-
     Evaluate the current board at the leaf node.
         Args:
             state: tuple,(stones,playing)
         Returns:
-
     stones, playing = state
     # Step1. Restore the board
     # 1 for occupied by self, 2 for occupied by opponent, 0 for empty position
@@ -269,8 +213,24 @@ def board_evaluation(state):
                     sequence.append(board[i + k][j - k])
                 boardEval += get_sequence_score(sequence)
     return boardEval
-
 """
+
+
+def my_evaluate(my_stones, board):
+    myScore = 0
+    myCounter = extract_feature(board, my_stones, myclassDict)
+    for pt in myCounter.keys():
+        myScore += myscoreDict[pt] * myCounter[pt]
+    return myScore
+
+
+def opp_evaluate(opp_stones, board):
+    oppScore = 0
+    oppCounter = extract_feature(board, opp_stones, oppclassDict)
+    for pt in oppCounter.keys():
+        oppScore += oppscoreDict[pt] * oppCounter[pt]
+    return oppScore
+
 
 def board_evaluation(state):
     """Evaluate the current board at the leaf node.
@@ -295,13 +255,7 @@ def board_evaluation(state):
                 board[i][j] = 1
     # Step2. Evaluate the board
     # Detect whether the sequence falls into the keys of classDicts
-    score = 0
-    mycnt, oppcnt = extract_feature(board, myclassDict, oppclassDict)
-    for pt in mycnt.keys():
-        score += myscoreDict[pt] * mycnt[pt]
-    for pt in oppcnt.keys():
-        score -= oppscoreDict[pt] * oppcnt[pt]
-    return score
+    return my_evaluate(my_stones, board) - opp_evaluate(opp_stones, board)
 
 
 def construct_tree(state, depth, maxDepth):
@@ -316,14 +270,14 @@ def construct_tree(state, depth, maxDepth):
                         indicates whose move it is, with 1 for my turn and 0 for opponent's turn
         depth: int, depth of current node in the search tree
         maxDepth: int, value of the max depth for the search tree
-
     Returns:
         class Node object,root node of the search tree
     """
     stones, playing = state
     opp_stones = stones[not playing].copy()  # deep copy of opponent's stones
     tree_root = Node(state, depth, maxDepth, successor=[])  # construct tree node
-    positions = get_next_stone(state)
+    all_positions = get_next_stone(state)
+    positions = interested_move(board, all_positions)
     values = []
     value2state = dict()
     # try every possible next stone
@@ -411,11 +365,11 @@ def strategy(state):
         best_action = random.choice(best_actions)
     return best_action
 
-
+"""
 if __name__ == '__main__':
     # simple test on get_next_stone
     board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
-    stones = [{(9, 10), (9, 9), (9, 11), (9, 7)}, {(10, 10), (11, 12), (10, 8), (9, 12)}]
+    stones = [{(11, 11), (10, 12), (12, 10), (13, 9)}, {(10, 10), (10, 13), (9, 13), (11, 13)}]
     playing = 1
     opp_stones = stones[not playing]
     my_stones = stones[playing]
@@ -423,7 +377,6 @@ if __name__ == '__main__':
         board[pos[0]][pos[1]] = 2
     for pos in my_stones:
         board[pos[0]][pos[1]] = 1
-
     for line in board:
         print(line)
     state = (stones, playing)
@@ -436,4 +389,4 @@ if __name__ == '__main__':
         q = q[1:]
         for successor in top.successor:
             q.append(successor)
-
+"""
