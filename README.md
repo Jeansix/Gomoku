@@ -4,13 +4,14 @@
 
   ```txt
   code
-  └─ pbrain-abpruning
+  └─ MCTS
          ├─ AI-Template.py
          ├─ mcts.py
          ├─ pisqpipe.py
          └─ utils.py
-  └─ MCTS
+  └─ pbrain-abpruning
          ├─ AI-template.py
+         ├─ board.py
          ├─ abpruning.py
          ├─ pisqpipe.py
          └─ utils.py
