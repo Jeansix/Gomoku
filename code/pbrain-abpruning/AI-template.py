@@ -5,8 +5,14 @@ from utils import *
 from abpruning import strategy
 
 
+# define board
+MAX_BOARD = 20
+board = [[0 for i in range(MAX_BOARD)] for j in range(MAX_BOARD)]
+
+level_max_n = [30, 30, 15, 15]
+depth = 3
 # interface part
-pp.infotext = 'name="pbrain-abpruning", author="Jeansix", version="2.2",country="China"'
+pp.infotext = 'name="pbrain-abpruning", author="Jeansix", version="3.1",country="China"'
 
 
 def brain_init():
@@ -86,7 +92,6 @@ def brain_about():
 def abpruning_brain():
     if pp.terminateAI:
         return
-
     state = get_board_state(board)
     action = strategy(state)
     x = action[0]
@@ -107,46 +112,6 @@ if DEBUG_EVAL:
         c = str(board[x][y])
         win32gui.ExtTextOut(dc, rc[2] - 15, 3, 0, None, c, ())
         win32gui.ReleaseDC(wnd, dc)
-
-######################################################################
-# A possible way how to debug brains.
-# To test it, just "uncomment" it (delete enclosing """)
-######################################################################
-"""
-# define a file for logging ...
-DEBUG_LOGFILE = "/tmp/pbrain-pyrandom.log"
-# ...and clear it initially
-with open(DEBUG_LOGFILE,"w") as f:
-	pass
-
-# define a function for writing messages to the file
-def logDebug(msg):
-	with open(DEBUG_LOGFILE,"a") as f:
-		f.write(msg+"\n")
-		f.flush()
-
-# define a function to get exception traceback
-def logTraceBack():
-	import traceback
-	with open(DEBUG_LOGFILE,"a") as f:
-		traceback.print_exc(file=f)
-		f.flush()
-	raise
-
-# use logDebug wherever
-# use try-except (with logTraceBack in except branch) to get exception info
-# an example of problematic function
-def brain_turn():
-	logDebug("some message 1")
-	try:
-		logDebug("some message 2")
-		1. / 0. # some code raising an exception
-		logDebug("some message 3") # not logged, as it is after error
-	except:
-		logTraceBack()
-"""
-######################################################################
-
 
 # overwrites information about a game
 # The board has 20x20 squares

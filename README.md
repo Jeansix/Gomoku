@@ -5,6 +5,11 @@
   ```txt
   code
   └─ pbrain-abpruning
+         ├─ AI-Template.py
+         ├─ mcts.py
+         ├─ pisqpipe.py
+         └─ utils.py
+  └─ MCTS
          ├─ AI-template.py
          ├─ abpruning.py
          ├─ pisqpipe.py
@@ -16,9 +21,12 @@
   ```txt
   cd pbrain-abpruning
   pyinstaller utils.py abpruning.py AI-template.py pisqpipe.py --name pbrain-abpruning.exe --onefile
+  cd MCTS
+  pyinstaller utils.py abpruning.py AI-Template.py pisqpipe.py --name pbrain-mcts.exe 
+  --onefile
   ```
 
   
 
-- [ ] Implement MCTS and improve your agents.
+- [x] Implement MCTS and improve your agents.
 
