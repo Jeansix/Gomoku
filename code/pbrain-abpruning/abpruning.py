@@ -11,7 +11,7 @@ def place_stone(board, current_move, alpha, beta, player, level):
                     current_move: tuple, current move conducted by player
                     alpha: float
                     beta: float
-                    player: 1 for my turn, 2 for agent's turn
+                    player: 1 for agent's turn, 2 for opponent's turn
                     level: current searching depth
                 Returns:
                     a sorted list for next possible stones
@@ -33,7 +33,7 @@ def value_stone(board, last_move, alpha, beta, player, level):
                     last_move: tuple, last move conducted by player
                     alpha: float
                     beta: float
-                    player: 1 for my turn, 2 for agent's turn
+                    player: 1 for agent's turn, 2 for opponent's turn
                     level: current searching depth
                 Returns:
                     value for target stone
@@ -57,7 +57,7 @@ def best_action(board, last_move, alpha, beta, player, level):
                         last_move: tuple, last move conducted by 3-player
                         alpha: float
                         beta: float
-                        player: 1 for my turn, 2 for agent's turn
+                        player: 1 for agent's turn, 2 for opponent's turn
                         level: current searching depth
                     Returns:
                         best_move: tuple

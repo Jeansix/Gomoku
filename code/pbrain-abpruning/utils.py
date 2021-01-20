@@ -354,7 +354,7 @@ def extract_feature(board, player, pos):
     """extract features for current player.
             Args:
                 board: 20*20 array,representing the current state of the game
-                player: 1 for my turn, 2 for agent's turn
+                player: 1 for agent's turn, 2 for opponent's turn
                 pos: tuple,target position
             Returns:
                 cnt: a dictionary, representing appearing time for each pattern
@@ -385,7 +385,7 @@ def win(board, last_move, current_move, player):
                         board: 20*20 array,representing the current state of the game
                         last_move: tuple, last move conducted by 3-player
                         current_move: tuple, last move conducted by player
-                        player: 1 for my turn, 2 for agent's turn
+                        player: 1 for agent's turn, 2 for opponent's turn
                     Returns:
                         bool
         """
@@ -403,7 +403,7 @@ def filter(board, last_move, player, candidates):
                 Args:
                     board: 20*20 array,representing the current state of the game
                     last_move: tuple, last move conducted by 3-player
-                    player: 1 for my turn, 2 for agent's turn
+                    player: 1 for agent's turn, 2 for opponent's turn
                     candidates: list of tuples, next possible stones
                 Returns:
                     a sorted list for next possible stones
@@ -430,7 +430,7 @@ def board_evaluation(board, player):
     """evaluate current board.
                 Args:
                     board: 20*20 array,representing the current state of the game
-                    player: 1 for my turn, 2 for agent's turn
+                    player: 1 for agent's turn, 2 for opponent's turn
                 Returns:
                     score:int,score for current board,used as value for ab-pruning
     """

@@ -125,7 +125,7 @@ class Board:
         """extract features for current player.
                 Args:
                     board: 20*20 array,representing the current state of the game
-                    player: 1 for my turn, 2 for agent's turn
+                    player: 1 for agent's turn, 2 for opponent's turn
                     pos: tuple,target position
                 Returns:
                     cnt: a dictionary, representing appearing time for each pattern
@@ -157,7 +157,7 @@ class Board:
                     Args:
                         board: 20*20 array,representing the current state of the game
                         last_move: tuple, last move conducted by 3-player
-                        player: 1 for my turn, 2 for agent's turn
+                        player: 1 for agent's turn, 2 for opponent's turn
                         candidates: list of tuples, next possible stones
                     Returns:
                         a sorted list for next possible stones
@@ -184,7 +184,7 @@ class Board:
         """evaluate current board.
                         Args:
                             board: 20*20 array,representing the current state of the game
-                            player: 1 for my turn, 2 for agent's turn
+                            player: 1 for agent's turn, 2 for opponent's turn
                         Returns:
                             score:int,score for current board,used as value for ab-pruning
         """
@@ -229,7 +229,7 @@ class Board:
                         last_move: tuple, last move conducted by player
                         alpha: float
                         beta: float
-                        player: 1 for my turn, 2 for agent's turn
+                        player: 1 for agent's turn, 2 for opponent's turn
                         level: current searching depth
                     Returns:
                         value for target stone
@@ -248,7 +248,7 @@ class Board:
                         current_move: tuple, current move conducted by player
                         alpha: float
                         beta: float
-                        player: 1 for my turn, 2 for agent's turn
+                        player: 1 for agent's turn, 2 for opponent's turn
                         level: current searching depth
                     Returns:
                         a sorted list for next possible stones
@@ -271,7 +271,7 @@ class Board:
                                 last_move: tuple, last move conducted by 3-player
                                 alpha: float
                                 beta: float
-                                player: 1 for my turn, 2 for agent's turn
+                                player: 1 for agent's turn, 2 for opponent's turn
                                 level: current searching depth
                             Returns:
                                 best_move: tuple
