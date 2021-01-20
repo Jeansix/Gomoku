@@ -3,11 +3,12 @@ import numpy as np
 import random
 from copy import deepcopy
 from utils import *
+from time import time
 
 width = pp.width
 height = pp.height
-simulate_time = 30
-simulate_num = 50
+simulate_time = 10
+simulate_num = 25
 
 
 class MCTSNode(object):
@@ -32,7 +33,7 @@ class MCTSNode(object):
     """
 
     def __init__(self, state, successor=None, parent=None, step=None):
-        self.state = state  # (board, nextPlayer)
+        self.state = state  # (board, next Player)
         self.neighbour = []
         if not successor:
             self.successor = []
@@ -49,11 +50,19 @@ class MCTSNode(object):
         self.isRoot = True
         if self.parent:
             self.isRoot = False
+        self.updateNeighbour()
 
     def update(self, newReward):
         """更新结点被访问次数和获胜次数，函数用于back propagation"""
         self.visit_num += 1
         self.reward += newReward
+
+    def isEmpty(self):
+        for k in range(height):
+            for j in range(width):
+                if self.board[k][j]:
+                    return False
+        return True
 
     def isBegin(self):
         """判断是否开局, 依据为board是否为空
@@ -90,14 +99,14 @@ class MCTSNode(object):
             return 0
 
     def updateNeighbour(self):
-        """将neighbour更新为已有棋子所有临近位置 8-neighbour"""
+        """将neighbour更新为已有棋子所有临近位置 8-neighbour."""
 
         if self.isRoot:
             # 当前为根结点则检查整个board并产生neighbour
             for k in range(height):
                 for j in range(width):
                     if self.board[k][j]:
-                        self.neighbour.append(get_free_around((k, j), self.board))
+                        self.neighbour.extend(get_free_around((k, j), self.board))
             self.neighbour = list(set(self.neighbour))
 
         else:
@@ -142,19 +151,22 @@ class MCTSNode(object):
             newNode: an MCTSNode
 
         """
+        parent = deepcopy(self)
         if step not in self.suc_node.keys() and self.isLegalStep(step):
             x, y = step
             # new Node
             newBoard = deepcopy(self.board)
             newBoard[x][y] = self.player
             newState = (newBoard, 3 - self.player)
-            newNode = MCTSNode(newState, self, step)
-            newNode.updateNeighbour()
+
+            newNode = MCTSNode(newState, successor=None, parent=parent, step=step)
+            # newNode.updateNeighbour()
+            newNode.sucFromNeighbour()
             # 必胜
             if isTerminate(newBoard):
                 newNode.prob = 1
             self.suc_node[step] = newNode
-            return newNode
+        return self.suc_node[step]
 
     def expandAll(self):
         """扩展所有可能后继结点"""
@@ -194,6 +206,8 @@ class simNode(object):
         self.player = player  # 下一个走棋的玩家
         if not successor:
             self.successor = []
+        else:
+            self.successor = successor
         self.heuristic = gen_heuristic(self.board, player)
         # self.four_one = []  # 连续的四个1周围的空位
         # self.four_two = []
@@ -252,47 +266,47 @@ class simNode(object):
                 break  # heuristic 中同一step不会出现两次
 
         # 按行、列、对角线检查
-        # 方便起见，超出范围部分标记为-1，使所得列表长度总为11且以(x, y)为中心
+        # 方便起见，超出范围部分标记为9，使所得列表长度总为11且以(x, y)为中心
         # 以(x, y)为中心，长度为10的一行
-        row = [self.board[x][y + j] if (y + j) in range(width) else -1 for j in range(-5, 6)]
+        row = [self.board[x][y + j] if (y + j) in range(width) else 9 for j in range(-5, 6)]
         s = ''.join(map(str, row))
         del row
         s = color(s, self.player)
         for j in range(len(s)):
             value = int(s[j])
-            if value > 3:
+            if 9 > value > 3:
                 self.heuristic[value - 4].append((x, y + j - 5))
 
         # 以(x, y)为中心，长度为10的一列
-        col = [self.board[x + k][y] if (x + k) in range(height) else -1 for k in range(-5, 6)]
+        col = [self.board[x + k][y] if (x + k) in range(height) else 9 for k in range(-5, 6)]
         s = ''.join(map(str, col))
         del col
         s = color(s, self.player)
         for k in range(len(s)):
             value = int(s[k])
-            if value > 3:
+            if 9 > value > 3:
                 self.heuristic[value - 4].append((x + k - 5, y))
 
         # 以(x, y)为中心，长度为10的对角线
         diag1 = [self.board[x + k][y + k] if (x + k) in range(height) and (y + k) in range(width)
-                 else -1 for k in range(-5, 6)]
+                 else 9 for k in range(-5, 6)]
         s = ''.join(map(str, diag1))
         del diag1
         s = color(s, self.player)
         for k in range(len(s)):
             value = int(s[k])
-            if value > 3:
+            if 9 > value > 3:
                 self.heuristic[value - 4].append((x + k - 5, y + k - 5))
 
         # 以(x, y)为中心，长度为10的斜对角线
         diag2 = [self.board[x + j][y - j] if (x + j) in range(height) and (y - j) in range(width)
-                 else -1 for j in range(-5, 6)]
+                 else 9 for j in range(-5, 6)]
         s = ''.join(map(str, diag2))
         del diag2
         s = color(s, self.player)
         for k in range(len(s)):
             value = int(s[k])
-            if value > 3:
+            if 9 > value > 3:
                 self.heuristic[value - 4].append((x + k - 5, y - k - 5))
 
     def updateOneStep(self, step):
@@ -305,7 +319,8 @@ class simNode(object):
         # update board
         self.board[x][y] = self.player
         # update successor
-        self.successor.remove(step)
+        if step in self.successor:
+            self.successor.remove(step)
         newSuc = get_free_around(step, self.board)
         self.successor.extend(newSuc)
         self.successor = list(set(self.successor))
@@ -321,10 +336,10 @@ class simNode(object):
 
         """
         index = self.nonEmptyHeu()
-        if index > 0:
+        if index >= 0:
             newStep = random.choice(self.heuristic[index])
         else:
-            newStep = random.choice(self.heuristic)
+            newStep = random.choice(self.successor)
         return newStep
 
     def simulate(self, max_num=simulate_num):
@@ -338,13 +353,15 @@ class simNode(object):
         """
         beginner = self.player
         for _ in range(max_num):
-            newStep = self.chooseStep()
-            self.updateOneStep(newStep)
+            # newStep = self.chooseStep()
+            # self.updateOneStep(newStep)
             if self.isEnd():  # winner
                 if beginner == self.isEnd():
                     return 1
                 else:
                     return 0
+            newStep = self.chooseStep()
+            self.updateOneStep(newStep)
         return 0
 
 
@@ -359,7 +376,7 @@ def genSimNode(node):
 
     """
     newBoard = deepcopy(node.board)
-    newSuc = deepcopy(node.nerighbour)
+    newSuc = deepcopy(node.neighbour)
     return simNode(newBoard, node.player, newSuc)
 
 
@@ -368,14 +385,17 @@ class myMCT(object):
 
     def __init__(self, state):
         self.root = MCTSNode(state)  # 假定不是终局
-        self.current = self.root
+        # self.current = self.root
 
+    '''
     def strategy(self):
         """获得最优step"""
         candidate = []  # (step, prob)
         self.root.sucFromNeighbour()
         for step in self.root.successor:
             current = self.root.expand(step)
+            if current is None:
+                continue
             current.sucFromNeighbour()
             if current.prob == 1:
                 return step  # 该步必胜
@@ -395,7 +415,66 @@ class myMCT(object):
             candidate.append((step, 1 - max(subCandidate)))
         candidate.sort(key=lambda x: x[1], reverse=True)
         return candidate[0][0]
+    '''
+
+    def bestStep(self):
+        if self.root.isEmpty():
+            return height // 2, width // 2
+        candidate = []
+        self.root.sucFromNeighbour()
+        s = genSimNode(self.root)
+
+        if s.nonEmptyHeu() >= 0:
+            return random.choice(s.heuristic[s.nonEmptyHeu()])
+
+        t = time()
+        for newStep in self.root.successor:
+            if time() - t > 30:
+                break
+            child = self.root.expand(newStep)
+            if child.prob == 1:
+                return newStep
+            # for _ in range(simulate_time):
+            #    sim = genSimNode(child)
+            #    s = sim.simulate(simulate_num)
+            #    reward = 1 - s
+            #    child.update(reward)
+            time1 = time()
+            while time() - time1 <= 1:
+                sim = genSimNode(child)
+                s = sim.simulate(simulate_num)
+                reward = 1 - s
+                child.update(reward)
+            candidate.append((child.updateProb(), newStep))
+        candidate.sort(key=lambda x: x[0], reverse=True)
+        if len(candidate) == 0:
+            return random.choice(self.root.successor)
+        return candidate[0][1]
 
 
+"""
 if __name__ == '__main__':
-    pass
+    a = [[0 for i in range(height)] for j in range(width)]
+    a[1][3] = 2
+    a[1][4] = 2
+    a[1][5] = 2
+    a[1][6] = 2
+    a[1][7] = 1
+
+    for i in range(4, 8):
+        a[i][i] = 2
+
+    # mct = myMCT((a, 1))
+    # step = mct.strategy()
+    # print(mct.strategy())
+
+    m = MCTSNode((a, 1))
+    print(m.neighbour)
+    m.sucFromNeighbour()
+    print(m.successor)
+    sNode = genSimNode(m)
+
+    mct = myMCT((a, 1))
+    step = mct.bestStep()
+    print(step)
+"""

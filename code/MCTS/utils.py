@@ -23,7 +23,8 @@ def get_free_around(step, board):
         for j in range(max(0, y - 1), min(height, y + 2)):
             if board[i][j] == 0:
                 stepList.append((i, j))
-    stepList.remove(step)
+    if step in stepList:
+        stepList.remove(step)
     return stepList
 
 
@@ -58,12 +59,14 @@ def isTerminate(board):
         num2str = ''.join([str(i) for i in row])
         if isFive(num2str):
             return True
+
     # 检查列
     for j in range(width):
         num2str = ''.join([str(board[i][j]) for i in range(height)])
         if isFive(num2str):
             return True
     array = np.array(board)
+
     # 检查对角线/斜对角线
     for k in range(-width + 1, width):
         diag1 = np.diagonal(array, offset=k)
@@ -208,6 +211,7 @@ def gen_heuristic(board, player=1):
     return heuristic
 
 
+"""
 if __name__ == '__main__':
     a = [[0 for i in range(height)] for j in range(width)]
     a[1][3] = 2
@@ -221,3 +225,4 @@ if __name__ == '__main__':
     b = gen_heuristic(a)
     print(b)
     print(isTerminate(a))
+"""
